@@ -1,0 +1,612 @@
+<!doctype html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+
+		<title>High-Performance Database Queries in WordPress</title>
+
+		<meta name="description" content="">
+		<meta name="author" content="Alley Interactive">
+
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<link rel="stylesheet" href="css/reveal.min.css">
+		<link rel="stylesheet" href="css/theme/alley.css" id="theme">
+
+		<!-- For syntax highlighting -->
+		<link rel="stylesheet" href="lib/css/zenburn.css">
+
+		<!-- Printing and PDF exports -->
+		<script>
+			var link = document.createElement('link');
+			link.rel = 'stylesheet';
+			link.type = 'text/css';
+			link.href = window.location.search.match( /print-pdf/gi ) ? 'css/print/pdf.css' : 'css/print/paper.css';
+			document.getElementsByTagName( 'head' )[0].appendChild( link );
+		</script>
+	</head>
+
+	<body>
+
+		<div class="reveal">
+
+			<!-- Any section element inside of this container is displayed as a slide -->
+			<div class="slides">
+
+				<section class="center" data-background="images/pattern.png">
+					<section id="title-slide" class="center">
+						<h2>High-Performance<br />Database Queries<br />in WordPress</h2>
+						<p>Matthew Boynes / @senyob / alley.co</p>
+					</section>
+
+					<section class="center">
+						<h2><img src="images/logo.png" alt="Alley Interactive" id="title-logo" style="width:30%" /></h2>
+
+						<ul>
+							<li>We are a full-service digital agency</li>
+							<li>WordPress.com VIP partner</li>
+							<li>Hiring!</li>
+						</ul>
+					</section>
+				</section>
+
+				<section class="center">
+					<h2>Learning Objectives</h2>
+				</section>
+
+				<section>
+					<section data-transition="none">
+						<h2>What makes a query fast or slow?</h2>
+						<blockquote>
+							<p>The most basic reason a query doesn’t perform well is because it’s working with too much data. <span class="fragment">Some queries just have to sift through a lot of data and can’t be helped. That’s unusual, though; most bad queries can be changed to access less data.</span></p>
+						</blockquote>
+
+						<p><cite>High Performance MySQL, 3rd Edition by Baron Schwartz; Peter Zaitsev; Vadim Tkachenko</cite></p>
+					</section>
+
+					<section data-transition="none">
+						<h2>What makes a query fast or slow?</h2>
+						<p>What is the most basic way to speed up a database query?</p>
+						<p class="fragment"><strong>Reduce the amount of data the database has to read.</strong></p>
+					</section>
+				</section>
+
+				<section>
+					<section data-transition="none">
+						<h2>Indexes</h2>
+
+						<p class="fragment"><small>(Specifically, B-tree indexes...)</small></p>
+
+						<ul>
+							<li class="fragment">Indexes reduce the amount of data the server has to examine.</li>
+							<li class="fragment">Indexes help the server avoid sorting and temporary tables.</li>
+							<li class="fragment">Indexes turn random I/O into sequential I/O.</li>
+						</ul>
+
+						<p><cite>High Performance MySQL, 3rd Edition by Baron Schwartz; Peter Zaitsev; Vadim Tkachenko</cite></p>
+					</section>
+
+					<section data-transition="none">
+						<h2>Indexes</h2>
+
+						<h3>Cons</h3>
+						<ul>
+							<li class="fragment">Speed of write operations</li>
+							<li class="fragment">Storage space</li>
+							<li class="fragment">Memory</li>
+							<li class="fragment">Flexibility</li>
+						</ul>
+					</section>
+				</section>
+
+				<section>
+					<section data-transition="none">
+						<h2>Indexes in WordPress</h2>
+
+						<h3><code>wp_posts</code></h3>
+						<table>
+							<thead>
+								<tr>
+									<th>Keyname</th>
+									<th>Type</th>
+									<th>Field</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr><td>PRIMARY</td><td>PRIMARY</td><td>ID</td></tr>
+								<tr>
+									<td>post_name</td>
+									<td>INDEX</td>
+									<td>post_name</td>
+								</tr>
+								<tr>
+									<td>type_status_date</td>
+									<td>INDEX</td>
+									<td>post_type<br>post_status<br>post_date<br>ID</td>
+								</tr>
+								<tr>
+									<td>post_parent</td>
+									<td>INDEX</td>
+									<td>post_parent</td>
+								</tr>
+								<tr>
+									<td>post_author</td>
+									<td>INDEX</td>
+									<td>post_author</td>
+								</tr>
+							</tbody>
+						</table>
+					</section>
+
+					<section data-transition="none">
+						<h2>Indexes in WordPress</h2>
+
+						<h3><code>wp_postmeta</code></h3>
+						<table>
+							<thead>
+								<tr>
+									<th>Keyname</th>
+									<th>Type</th>
+									<th>Field</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr><td>PRIMARY</td><td>PRIMARY</td><td>meta_id</td></tr>
+								<tr>
+									<td>post_id</td>
+									<td>INDEX</td>
+									<td>post_id</td>
+								</tr>
+								<tr>
+									<td>meta_key</td>
+									<td>INDEX</td>
+									<td>meta_key</td>
+								</tr>
+							</tbody>
+						</table>
+					</section>
+
+					<section data-transition="none">
+						<h2>Indexes in WordPress</h2>
+
+						<h3><code>wp_terms</code></h3>
+						<table>
+							<thead>
+								<tr>
+									<th>Keyname</th>
+									<th>Type</th>
+									<th>Field</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr><td>PRIMARY</td><td>PRIMARY</td><td>term_id</td></tr>
+								<tr><td>slug</td><td>UNIQUE</td><td>slug</td></tr>
+								<tr><td>name</td><td>INDEX</td><td>name</td></tr>
+							</tbody>
+						</table>
+					</section>
+
+					<section data-transition="none">
+						<h2>Indexes in WordPress</h2>
+
+						<h3><code>wp_term_relationships</code></h3>
+						<table>
+							<thead>
+								<tr>
+									<th>Keyname</th>
+									<th>Type</th>
+									<th>Field</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr><td>PRIMARY</td><td>PRIMARY</td><td>object_id<br />term_taxonomy_id</td></tr>
+								<tr><td>term_taxonomy_id</td><td>INDEX</td><td>term_taxonomy_id</td></tr>
+							</tbody>
+						</table>
+					</section>
+
+					<section data-transition="none">
+						<h2>Indexes in WordPress</h2>
+
+						<h3><code>wp_term_taxonomy</code></h3>
+						<table>
+							<thead>
+								<tr>
+									<th>Keyname</th>
+									<th>Type</th>
+									<th>Field</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr><td>PRIMARY</td><td>PRIMARY</td><td>term_taxonomy_id</td></tr>
+								<tr><td>term_id_taxonomy</td><td>UNIQUE</td><td>term_id<br />taxonomy</td></tr>
+								<tr><td>taxonomy</td><td>INDEX</td><td>taxonomy</td></tr>
+							</tbody>
+						</table>
+					</section>
+				</section>
+
+				<section>
+					<h2>Joins</h2>
+					<ul>
+						<li class="fragment">Are they always bad? <em class="fragment">No!</em></li>
+						<li class="fragment">But they can be</li>
+						<li class="fragment">JOIN order is important, as is proper indexing</li>
+						<li class="fragment">Many JOINs can cause a lot of CPU overhead</li>
+					</ul>
+				</section>
+
+				<section>
+					<section data-transition="none">
+						<h2>Archive Queries</h2>
+						<ul>
+							<li class="fragment">Filters by post type, post status, orders by date</li>
+							<li class="fragment">Remember that <code>type_status_date</code> index?</li>
+						</ul>
+					</section>
+
+					<section data-transition="none">
+						<h2>Archive Queries</h2>
+						<pre><code data-trim class="sql">
+						SELECT SQL_CALC_FOUND_ROWS wp_posts.ID
+						FROM wp_posts
+						WHERE 1=1
+							AND wp_posts.post_type = 'post'
+							AND (wp_posts.post_status = 'publish'
+							OR wp_posts.post_status = 'private')
+						ORDER BY wp_posts.post_date DESC
+						LIMIT 0, 10
+						</code></pre>
+						<p class="fragment">~73ms with 100k posts</p>
+					</section>
+
+					<section data-transition="none">
+						<h2>Archive Queries</h2>
+						<p class="fragment">Why is this so slow?</p>
+						<pre class="fragment"><code data-trim class="sql">
+						> EXPLAIN SELECT ... \G
+						*************************** 1. row ***************************
+						           id: 1
+						  select_type: SIMPLE
+						        table: wp_posts
+						         type: range
+						possible_keys: type_status_date
+						          key: type_status_date
+						      key_len: 164
+						          ref: NULL
+						         rows: 49702
+						        Extra: Using where; Using index; Using filesort
+						</code></pre>
+					</section>
+
+					<section data-transition="none">
+						<h2>Archive Queries</h2>
+						<ul>
+							<li>The query itself is fast, sorting it is slow.</li>
+							<li class="fragment">Can we save time by sorting it in PHP? <em class="fragment">I'm glad you asked...</em></li>
+							<li class="fragment">It takes longer just to deliver the data over a local connection.</li>
+							<li class="fragment">All told, it takes about 14x longer!</li>
+						</ul>
+					</section>
+				</section>
+
+				<section>
+					<section data-transition="none">
+						<h2>Taxonomy Queries</h2>
+						<ul>
+							<li class="fragment">Typical tax query uses indexed columns</li>
+							<li class="fragment">Basic tax query uses single JOIN</li>
+							<li class="fragment">JOIN happens on indexed column</li>
+						</ul>
+					</section>
+
+					<section data-transition="none">
+						<h2>Taxonomy Queries</h2>
+						<pre><code data-trim class="sql">
+						SELECT SQL_CALC_FOUND_ROWS wp_posts.ID
+						FROM wp_posts
+						LEFT JOIN wp_term_relationships
+							ON (wp_posts.ID = wp_term_relationships.object_id)
+						WHERE 1=1
+							AND ( wp_term_relationships.term_taxonomy_id IN (2) )
+							AND wp_posts.post_type = 'post'
+							AND (wp_posts.post_status = 'publish'
+							OR wp_posts.post_status = 'private')
+						GROUP BY wp_posts.ID
+						ORDER BY wp_posts.post_date DESC
+						LIMIT 0, 10
+						</code></pre>
+						<p class="fragment">~200ms with 100k posts in the term</p>
+					</section>
+
+					<section data-transition="none">
+						<h2>Taxonomy Queries</h2>
+						<h3>Multiple Taxonomies</h3>
+						<pre><code data-trim class="sql">
+						SELECT SQL_CALC_FOUND_ROWS wp_posts.ID
+						FROM wp_posts
+						LEFT JOIN wp_term_relationships
+							ON (wp_posts.ID = wp_term_relationships.object_id)
+						LEFT JOIN wp_term_relationships AS tt1
+							ON (wp_posts.ID = tt1.object_id)
+						WHERE 1=1
+							AND ( wp_term_relationships.term_taxonomy_id IN (2)
+							AND tt1.term_taxonomy_id IN (9) )
+							AND wp_posts.post_type = 'post'
+							AND (wp_posts.post_status = 'publish'
+							OR wp_posts.post_status = 'private')
+						GROUP BY wp_posts.ID
+						ORDER BY wp_posts.post_date DESC
+						LIMIT 0, 10
+						</code></pre>
+						<p class="fragment">~1ms with 100k posts in one term and 1 post in the other</p>
+					</section>
+
+					<section data-transition="none">
+						<h2>Taxonomy Queries</h2>
+						<h3>Multiple Taxonomies</h3>
+						<pre><code data-trim class="sql">
+						EXPLAIN SELECT ... \G
+						*************************** 1. row ***************************
+						        table: tt1
+						         rows: 1
+						        Extra: Using index; Using temporary; Using filesort
+						*************************** 2. row ***************************
+						        table: wp_posts
+						         rows: 1
+						        Extra: Using where
+						*************************** 3. row ***************************
+						        table: wp_term_relationships
+						         rows: 1
+						        Extra: Using index
+						</code></pre>
+					</section>
+				</section>
+
+				<section>
+					<section data-transition="none">
+						<h2>Meta Queries</h2>
+						<ul>
+							<li class="fragment">Typical meta query leverages indexed columns (meta_key, post_id)</li>
+							<li class="fragment">JOIN happens on indexed column</li>
+							<li class="fragment">meta_value is <em>not</em> indexed (out-of-the-box)</li>
+						</ul>
+					</section>
+
+					<section data-transition="none">
+						<h2>Meta Queries</h2>
+						<pre><code data-trim class="sql">
+						SELECT SQL_CALC_FOUND_ROWS wp_posts.ID
+						FROM wp_posts
+						INNER JOIN wp_postmeta
+							ON ( wp_posts.ID = wp_postmeta.post_id )
+						WHERE 1=1
+							AND ( ( wp_postmeta.meta_key = 'city'
+							AND wp_postmeta.meta_value = 'portland' ) )
+							AND wp_posts.post_type = 'post'
+							AND (wp_posts.post_status = 'publish'
+							OR wp_posts.post_status = 'private')
+						GROUP BY wp_posts.ID
+						ORDER BY wp_posts.post_date DESC
+						LIMIT 0, 10
+						</code></pre>
+						<p class="fragment">~410ms with 99,999 matching posts</p>
+						<p class="fragment">~340ms with 1 matching post</p>
+					</section>
+
+					<section data-transition="none">
+						<h2>Meta Queries</h2>
+						<p class="fragment">A query is either fast or slow based on <strong>cardinality of the meta key</strong></p>
+						<p class="fragment">When there's only 1 post with the 'city' key: <strong class="fragment">1ms</strong></p>
+					</section>
+				</section>
+
+				<section>
+					<h2>Planning and Data Architecture</h2>
+					<ul>
+						<li class="fragment">Know Thy Data</li>
+						<li class="fragment">... especially tomorrow's data</li>
+						<li class="fragment">Working on an open-source plugin? Assume the worst.</li>
+					</ul>
+				</section>
+
+				<section>
+					<section data-transition="none">
+						<h2>Search Queries</h2>
+						<ul>
+							<li class="fragment">Simply put: not scalable</li>
+							<li class="fragment">For large sites, use something external</li>
+						</ul>
+					</section>
+				</section>
+
+				<section class="center">
+					<h2>Refactoring</h2>
+				</section>
+
+				<section>
+					<section data-transition="none">
+						<h2>Add Date Limitations</h2>
+						<ul>
+							<li class="fragment">Example: Widget that shows X latest posts</li>
+							<li class="fragment">Add date query with a safe range</li>
+							<li class="fragment">Story time! Using this in curation search</li>
+						</ul>
+					</section>
+
+					<section data-transition="none">
+						<h2>Add Date Limitations</h2>
+						<pre><code data-trim class="php">
+						$query = new \WP_Query(
+							[
+								/* ... */
+								'date_query' => [
+									[
+										'after' => '-6 months',
+									],
+								],
+							]
+						);
+						</code></pre>
+					</section>
+				</section>
+
+				<section>
+					<section data-transition="none">
+						<h2>Add Index to <code>meta_value</code></h2>
+						<p class="fragment"><a href="https://github.com/Automattic/vip-go-mu-plugins-built/blob/fbdfa37dd290ef86b714eb9aa5969f20eb8b9172/schema.php">Courtesy of WordPress.com VIP</a></p>
+						<ul>
+							<li class="fragment">Index of meta_key and first 100 chars of meta_value</li>
+						</ul>
+					</section>
+				</section>
+
+				<section>
+					<section data-transition="none">
+						<h2>Creative Meta Keys</h2>
+						<ul>
+							<li class="fragment">Limit cardinality</li>
+							<li class="fragment">Example: Post relationships</li>
+							<li class="fragment">Old: [key: related_post, value: 12345]</li>
+							<li class="fragment">New: [key: related_post_12345, value: 👍]</li>
+						</ul>
+					</section>
+				</section>
+
+				<section>
+					<section data-transition="none">
+						<h2>Caching</h2>
+						<p class="fragment">Transients API</p>
+					</section>
+
+					<section data-transition="none">
+						<h2>Caching</h2>
+						<pre><code data-trim class="php">
+						$cache_key = 'popular_posts';
+						$post_ids = get_transient( $cache_key );
+						if ( false === $post_ids ) {
+							$post_ids = get_posts(
+								[
+									/* ... */
+									'fields' => 'ids',
+								]
+							);
+							set_transient( $cache_key, $post_ids, 10 * MINUTE_IN_SECONDS );
+						}
+						$posts = array_map( 'get_post', $post_ids );
+						</code></pre>
+					</section>
+
+					<section data-transition="none">
+						<h2>Caching</h2>
+						<p class="fragment">Ideally, cache indefinitely and only clear when the data changes</p>
+						<pre class="fragment"><code data-trim class="php">
+						function clear_popular_posts( $post_id, $post ) {
+							// Some logic determining if the cache should clear.
+							delete_transient( 'popular_posts' );
+						}
+						add_action( 'clean_post_cache', 'clear_popular_posts', 10, 2 );
+						</code></pre>
+					</section>
+				</section>
+
+				<section>
+					<section data-transition="none">
+						<h2>Pre-warming Caches</h2>
+						<ul>
+							<li class="fragment">Don't want an unlucky user to warm the cache?</li>
+							<li class="fragment">Kick off an async task using WP-Cron</li>
+						</ul>
+					</section>
+
+					<section data-transition="none">
+						<h2>Pre-warming Caches</h2>
+						<pre><code data-trim class="php">
+						add_action(
+							'save_post',
+							function() {
+								wp_schedule_single_event( time() + 5, 'warm_cache' );
+							}
+						);
+
+						add_action(
+							'warm_cache',
+							function() {
+								// Run laborious query and cache results.
+							}
+						);
+						</code></pre>
+					</section>
+
+					<section data-transition="none">
+						<h2>Pre-warming Caches</h2>
+						<p class="fragment">Real world example: user directory</p>
+					</section>
+				</section>
+
+				<section>
+					<section data-transition="none">
+						<h2>Convert Meta Queries to Tax Queries</h2>
+						<ul>
+							<li class="fragment">Meta may make more sense as taxonomy terms for querying</li>
+							<li class="fragment">Don't let admin presentation influence storage needs</li>
+							<li class="fragment">Hidden taxonomies!</li>
+						</ul>
+					</section>
+				</section>
+
+				<section>
+					<section data-transition="none">
+						<h2>Elasticsearch</h2>
+						<ul>
+							<li class="fragment">Sometimes, MySQL just isn't well-suited for the job!</li>
+							<li class="fragment">Elasticsearch is a dedicated search engine</li>
+							<li class="fragment">... not just for keyword searches</li>
+							<li class="fragment"><a href="https://github.com/alleyinteractive/searchpress/">SearchPress</a> and <a href="https://github.com/alleyinteractive/es-wp-query/">ES_WP_Query</a></li>
+						</ul>
+					</section>
+				</section>
+
+				<section class="center">
+					<h2>The End</h2>
+
+					<p><br />Want to become a better developer?<br />We're hiring.</p>
+					<p>alley.co/careers</p>
+				</section>
+
+			</div>
+
+			<img src="images/logo.png" alt="Alley Interactive" id="logo" />
+		</div>
+
+		<script src="lib/js/head.min.js"></script>
+		<script src="js/reveal.min.js"></script>
+
+		<script>
+
+			// Full list of configuration options available here:
+			// https://github.com/hakimel/reveal.js#configuration
+			Reveal.initialize({
+				history: true,
+				center: false,
+				transition: 'convex',
+
+				// Optional libraries used to extend on reveal.js
+				dependencies: [
+					{ src: 'plugin/markdown/marked.js' },
+					{ src: 'plugin/markdown/markdown.js' },
+					{ src: 'plugin/notes/notes.js', async: true },
+					{ src: 'lib/js/classList.js', condition: function() { return !document.body.classList; } },
+					{ src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+					{ src: 'plugin/zoom-js/zoom.js', async: true, condition: function() { return !!document.body.classList; } }
+				]
+			});
+
+		</script>
+
+	</body>
+</html>
