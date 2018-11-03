@@ -54,10 +54,6 @@
 					</section>
 				</section>
 
-				<section class="center">
-					<h2>Learning Objectives</h2>
-				</section>
-
 				<section>
 					<section data-transition="none">
 						<h2>What makes a query fast or slow?</h2>
@@ -173,26 +169,6 @@
 					<section data-transition="none">
 						<h2>Indexes in WordPress</h2>
 
-						<h3><code>wp_terms</code></h3>
-						<table>
-							<thead>
-								<tr>
-									<th>Keyname</th>
-									<th>Type</th>
-									<th>Field</th>
-								</tr>
-							</thead>
-							<tbody>
-								<tr><td>PRIMARY</td><td>PRIMARY</td><td>term_id</td></tr>
-								<tr><td>slug</td><td>UNIQUE</td><td>slug</td></tr>
-								<tr><td>name</td><td>INDEX</td><td>name</td></tr>
-							</tbody>
-						</table>
-					</section>
-
-					<section data-transition="none">
-						<h2>Indexes in WordPress</h2>
-
 						<h3><code>wp_term_relationships</code></h3>
 						<table>
 							<thead>
@@ -205,26 +181,6 @@
 							<tbody>
 								<tr><td>PRIMARY</td><td>PRIMARY</td><td>object_id<br />term_taxonomy_id</td></tr>
 								<tr><td>term_taxonomy_id</td><td>INDEX</td><td>term_taxonomy_id</td></tr>
-							</tbody>
-						</table>
-					</section>
-
-					<section data-transition="none">
-						<h2>Indexes in WordPress</h2>
-
-						<h3><code>wp_term_taxonomy</code></h3>
-						<table>
-							<thead>
-								<tr>
-									<th>Keyname</th>
-									<th>Type</th>
-									<th>Field</th>
-								</tr>
-							</thead>
-							<tbody>
-								<tr><td>PRIMARY</td><td>PRIMARY</td><td>term_taxonomy_id</td></tr>
-								<tr><td>term_id_taxonomy</td><td>UNIQUE</td><td>term_id<br />taxonomy</td></tr>
-								<tr><td>taxonomy</td><td>INDEX</td><td>taxonomy</td></tr>
 							</tbody>
 						</table>
 					</section>
@@ -281,6 +237,7 @@
 						         rows: 49702
 						        Extra: Using where; Using index; Using filesort
 						</code></pre>
+						<p class="fragment">4ms with order/limit removed</p>
 					</section>
 
 					<section data-transition="none">
@@ -345,26 +302,6 @@
 						</code></pre>
 						<p class="fragment">~1ms with 100k posts in one term and 1 post in the other</p>
 					</section>
-
-					<section data-transition="none">
-						<h2>Taxonomy Queries</h2>
-						<h3>Multiple Taxonomies</h3>
-						<pre><code data-trim class="sql">
-						EXPLAIN SELECT ... \G
-						*************************** 1. row ***************************
-						        table: tt1
-						         rows: 1
-						        Extra: Using index; Using temporary; Using filesort
-						*************************** 2. row ***************************
-						        table: wp_posts
-						         rows: 1
-						        Extra: Using where
-						*************************** 3. row ***************************
-						        table: wp_term_relationships
-						         rows: 1
-						        Extra: Using index
-						</code></pre>
-					</section>
 				</section>
 
 				<section>
@@ -400,7 +337,7 @@
 
 					<section data-transition="none">
 						<h2>Meta Queries</h2>
-						<p class="fragment">A query is either fast or slow based on <strong>cardinality of the meta key</strong></p>
+						<p class="fragment">A query is either fast or slow based on <strong>uniqueness of the meta key</strong></p>
 						<p class="fragment">When there's only 1 post with the 'city' key: <strong class="fragment">1ms</strong></p>
 					</section>
 				</section>
@@ -434,7 +371,6 @@
 						<ul>
 							<li class="fragment">Example: Widget that shows X latest posts</li>
 							<li class="fragment">Add date query with a safe range</li>
-							<li class="fragment">Story time! Using this in curation search</li>
 						</ul>
 					</section>
 
